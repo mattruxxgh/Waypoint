@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BCP Ingredients — Train Car Management System</title>
+<style>
+  :root{
+    --bg:#0e1116; --panel:#161b22; --panel2:#1c232d; --line:#2b3440;
+    --ink:#e6edf3; --muted:#8b98a5; --accent:#f5a623; --accent2:#4aa3ff;
+    --green:#3fb950; --red:#f85149; --amber:#d29922; --purple:#a371f7;
+    --mono:'DM Mono','Roboto Mono',ui-monospace,Menlo,Consolas,monospace;
+    --sans:'Inter',-apple-system,system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+    background-image:radial-gradient(circle at 12% -10%,rgba(74,163,255,.06),transparent 40%),
+    radial-gradient(circle at 100% 0,rgba(245,166,35,.05),transparent 35%);}
+  header{display:flex;align-items:center;justify-content:space-between;gap:16px;
+    padding:14px 22px;border-bottom:1px solid var(--line);background:#0b0e13;
+    position:sticky;top:0;z-index:50;}
+  .brand{display:flex;align-items:center;gap:14px}
+  .logo{width:42px;height:42px;border-radius:8px;display:grid;place-items:center;
+    background:linear-gradient(135deg,#f5a623,#d97706);color:#1a1205;font-weight:800;
+    font-family:var(--mono);font-size:18px;box-shadow:0 0 0 1px rgba(245,166,35,.3)}
+  .brand h1{font-size:15px;margin:0;letter-spacing:.3px}
+  .brand span{font-size:11px;color:var(--muted);letter-spacing:2px;text-transform:uppercase}
+  .clock{font-family:var(--mono);font-size:13px;color:var(--muted);text-align:right}
+  .clock b{color:var(--ink)}
+  .wrap{padding:18px 22px;max-width:1500px;margin:0 auto}
+  .tabs{display:flex;gap:6px;margin-bottom:18px;flex-wrap:wrap}
+  .tab{padding:9px 16px;border:1px solid var(--line);background:var(--panel);color:var(--muted);
+    border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;transition:.15s;letter-spacing:.2px}
+  .tab:hover{color:var(--ink);border-color:#3a4756}
+  .tab.active{background:var(--accent);color:#1a1205;border-color:var(--accent)}
+  .tab.tsa.active{background:var(--red);color:#fff;border-color:var(--red)}
+  .grid{display:grid;gap:14px}
+  .lanes{grid-template-columns:repeat(auto-fill,minmax(225px,1fr))}
+  .lane{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;min-height:120px}
+  .lane h3{margin:0;padding:11px 14px;font-size:12px;letter-spacing:.6px;text-transform:uppercase;
+    display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line);
+    background:var(--panel2)}
+  .lane h3 .cnt{font-family:var(--mono);background:#0b0e13;border:1px solid var(--line);
+    padding:1px 8px;border-radius:20px;font-size:11px;color:var(--muted)}
+  .lane .body{padding:10px;display:flex;flex-direction:column;gap:9px}
+  .dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:6px}
+  .card{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:11px;
+    border-left:3px solid var(--accent2);position:relative}
+  .card .num{font-family:var(--mono);font-size:15px;font-weight:600;letter-spacing:.5px}
+  .card .meta{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.5}
+  .card .age{font-family:var(--mono);font-size:10px;color:var(--muted);margin-top:7px;
+    display:flex;justify-content:space-between;align-items:center}
+  .pill{font-size:9px;text-transform:uppercase;letter-spacing:.5px;padding:2px 7px;border-radius:20px;font-weight:700}
+  .pill.eo{background:rgba(163,113,247,.16);color:var(--purple)}
+  .pill.prod{background:rgba(74,163,255,.14);color:var(--accent2)}
+  .card.warn{border-left-color:var(--red);background:rgba(248,81,73,.07)}
+  .card.warn .num::after{content:'⚠ NO DEST';font-family:var(--sans);font-size:9px;color:var(--red);
+    margin-left:8px;font-weight:700;letter-spacing:.5px}
+  .card.overdue{border-left-color:var(--amber)}
+  .card.overdue .age{color:var(--amber)}
+  .empty{color:#5b6775;font-size:12px;text-align:center;padding:18px 0;font-style:italic}
+  /* forms */
+  .formgrid{grid-template-columns:1fr 1fr;align-items:start}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px}
+  .panel h2{margin:0 0 4px;font-size:15px}
+  .panel .sub{color:var(--muted);font-size:12px;margin-bottom:16px}
+  label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);
+    margin:12px 0 5px;font-weight:600}
+  input,select{width:100%;padding:10px 12px;background:#0b0e13;border:1px solid var(--line);
+    border-radius:8px;color:var(--ink);font-size:14px;font-family:var(--sans)}
+  input:focus,select:focus{outline:none;border-color:var(--accent2);box-shadow:0 0 0 3px rgba(74,163,255,.15)}
+  input.mono{font-family:var(--mono);letter-spacing:.5px}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .timebtn{margin-top:6px;font-size:11px;color:var(--accent2);background:none;border:none;cursor:pointer;padding:0}
+  button.primary{margin-top:18px;width:100%;padding:13px;background:var(--accent);color:#1a1205;
+    border:none;border-radius:8px;font-weight:700;font-size:14px;cursor:pointer;letter-spacing:.3px}
+  button.primary:hover{background:#ffb733}
+  button.ghost{padding:9px 14px;background:var(--panel2);border:1px solid var(--line);color:var(--ink);
+    border-radius:8px;cursor:pointer;font-size:12px;font-weight:600}
+  button.ghost:hover{border-color:#3a4756}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);
+    background:var(--green);color:#04140a;padding:12px 22px;border-radius:10px;font-weight:700;font-size:13px;
+    transition:.3s;z-index:99;box-shadow:0 8px 30px rgba(0,0,0,.5)}
+  .toast.show{transform:translateX(-50%) translateY(0)}
+  /* CN output */
+  .cnrow{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--panel2);
+    border:1px solid var(--line);border-radius:9px;margin-bottom:9px;font-family:var(--mono);font-size:13px}
+  .cnrow.bad{border-color:var(--red);background:rgba(248,81,73,.08)}
+  .cnrow .f{flex:1}
+  .cnrow .f small{display:block;font-family:var(--sans);font-size:9px;color:var(--muted);
+    text-transform:uppercase;letter-spacing:.5px;margin-bottom:2px}
+  .badge{font-size:10px;padding:3px 9px;border-radius:6px;font-weight:700;font-family:var(--sans)}
+  .badge.ok{background:rgba(63,185,80,.16);color:var(--green)}
+  .badge.miss{background:rgba(248,81,73,.18);color:var(--red)}
+  /* TSA */
+  .tsa-panel{background:linear-gradient(180deg,rgba(248,81,73,.08),var(--panel));
+    border:1px solid rgba(248,81,73,.4);border-radius:12px;padding:22px}
+  .tsa-head{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+  .tsa-head .badge2{background:var(--red);color:#fff;font-size:10px;font-weight:800;letter-spacing:1px;
+    padding:4px 10px;border-radius:6px}
+  .tsa-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px;margin-top:18px}
+  .tsa-car{font-family:var(--mono);font-size:18px;font-weight:600;text-align:center;padding:16px;
+    background:#0b0e13;border:1px solid var(--line);border-radius:9px;letter-spacing:1px}
+  .stat{display:flex;gap:22px;margin:14px 0 0;flex-wrap:wrap}
+  .stat div{font-size:12px;color:var(--muted)}
+  .stat b{display:block;font-family:var(--mono);font-size:24px;color:var(--ink);margin-top:2px}
+  .note{font-size:11px;color:var(--muted);margin-top:16px;line-height:1.6;border-top:1px solid var(--line);padding-top:14px}
+  @media(max-width:760px){
+    header{padding:11px 14px}
+    .brand h1{font-size:13px}
+    .brand span{font-size:9px;letter-spacing:1px}
+    .clock{font-size:11px}
+    .wrap{padding:12px 12px}
+    /* tabs scroll horizontally instead of wrapping into a tall block */
+    .tabs{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;
+      padding-bottom:6px;margin-bottom:14px;gap:7px}
+    .tabs::-webkit-scrollbar{height:0}
+    .tab{flex:0 0 auto;padding:11px 14px;font-size:13px}
+    /* one column everywhere */
+    .lanes{grid-template-columns:1fr !important}
+    .formgrid{grid-template-columns:1fr}
+    .row2{grid-template-columns:1fr}
+    .lane{min-height:0}
+    .tsa-list{grid-template-columns:1fr 1fr}
+    /* the multi-column data rows must stack on a phone */
+    .cnrow{flex-direction:column;align-items:stretch;gap:8px;font-size:14px}
+    .cnrow .f{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+    .cnrow .f small{display:inline;margin:0}
+    .cnrow .badge{align-self:flex-start}
+    .cnrow button.ghost{width:100%}
+    /* stat row wraps cleanly */
+    .stat{gap:14px 22px}
+    /* bigger tap targets on inputs/buttons */
+    input,select{padding:13px 12px;font-size:16px}
+    button.primary{padding:15px}
+    button.ghost{padding:12px 14px}
+  }
+  @media(max-width:420px){
+    .tsa-list{grid-template-columns:1fr}
+    .brand span{display:none}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <div class="logo">BCP</div>
+    <div><h1>Train Car Management System</h1><span>BCP Ingredients &middot; CN Rail</span></div>
+  </div>
+  <div class="clock" id="clock"></div>
+</header>
+
+<div class="wrap">
+  <div class="tabs">
+    <div class="tab active" data-view="dash">▦ Yard Dashboard</div>
+    <div class="tab" data-view="load">＋ Log Load</div>
+    <div class="tab" data-view="offload">＋ Log EO Offload</div>
+    <div class="tab" data-view="cn">⇪ CN Switch Output</div>
+    <div class="tab tsa" data-view="tsa">⚑ TSA / EO Report</div>
+    <div class="tab" data-view="shop">⚒ Shop Requests</div>
+  </div>
+  <div id="view"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------- sample data ---------- */
+const now = Date.now(), H = 3600e3;
+let cars = [
+  {id:1, num:'GATX 211043', product:'EO', type:'eo', status:'eo_wait', seal:'40118822', weight:'180,400', dest:'', since:now-5*H},
+  {id:2, num:'PROX 884201', product:'EO', type:'eo', status:'eo_wait', seal:'40118901', weight:'179,950', dest:'', since:now-2*H},
+  {id:3, num:'TILX 305596', product:'EO', type:'eo', status:'offloading', seal:'40119044', weight:'181,200', dest:'', since:now-1*H},
+  {id:4, num:'BCPX 100277', product:'Choline Cl 70%', type:'prod', status:'empty', seal:'55230011', weight:'', dest:'', since:now-9*H},
+  {id:5, num:'BCPX 100341', product:'Choline Cl 70%', type:'prod', status:'loading', seal:'55230048', weight:'', dest:'', since:now-2*H},
+  {id:6, num:'GATX 477820', product:'Choline Cl 75%', type:'prod', status:'loaded', seal:'55230102', weight:'191,300', dest:'Decatur, IL', since:now-6*H},
+  {id:7, num:'UTLX 660914', product:'Choline Cl 75%', type:'prod', status:'loaded', seal:'55230119', weight:'190,800', dest:'', since:now-7*H},
+  {id:8, num:'BCPX 100388', product:'Choline Cl 70%', type:'prod', status:'shop', seal:'—', weight:'', dest:'', since:now-50*H, shopConfirmed:false, shopReason:'Valve leak'},
+  {id:9, num:'TILX 305612', product:'EO', type:'eo', status:'shop', seal:'—', weight:'', dest:'', since:now-14*H, shopConfirmed:true, shopReason:'Hydrostatic test'},
+];
+let nextId = 10;
+const LANES = [
+  ['empty','On Track — Empty','#4aa3ff'],
+  ['loading','Loading','#f5a623'],
+  ['loaded','Loaded — Awaiting CN','#3fb950'],
+  ['eo_wait','EO — Awaiting Offload','#a371f7'],
+  ['offloading','Offloading','#d29922'],
+  ['shop','Requested to Shop','#f85149'],
+];
+const SHOP_OVERDUE_H = 48;
+
+/* ---------- helpers ---------- */
+const $ = s=>document.querySelector(s);
+const view = $('#view');
+function fmtAge(ts){const h=(Date.now()-ts)/H;if(h<1)return Math.round(h*60)+'m';return h.toFixed(1)+'h';}
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
+function nowTime(){return new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});}
+function tick(){const d=new Date();$('#clock').innerHTML=`<b>${d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</b><br>${d.toLocaleDateString([], {weekday:'short',month:'short',day:'numeric'})}`;}
+setInterval(tick,1000);tick();
+
+/* ---------- views ---------- */
+let current='dash';
+function render(){
+  if(current==='dash')renderDash();
+  else if(current==='load')renderLoad();
+  else if(current==='offload')renderOffload();
+  else if(current==='cn')renderCN();
+  else if(current==='tsa')renderTSA();
+  else if(current==='shop')renderShop();
+}
+
+function renderDash(){
+  const eoOnSite = cars.filter(c=>c.type==='eo'&&c.status!=='shop').length;
+  const noDest = cars.filter(c=>c.status==='loaded'&&!c.dest).length;
+  let html=`<div class="stat" style="margin-bottom:16px">
+    <div>CARS IN YARD<b>${cars.filter(c=>c.status!=='shop').length}</b></div>
+    <div>EO ON SITE<b style="color:var(--purple)">${eoOnSite}</b></div>
+    <div>AWAITING CN<b style="color:var(--green)">${cars.filter(c=>c.status==='loaded').length}</b></div>
+    <div>MISSING DEST<b style="color:${noDest?'var(--red)':'var(--ink)'}">${noDest}</b></div>
+    <div>AT SHOP<b style="color:var(--red)">${cars.filter(c=>c.status==='shop').length}</b></div>
+  </div><div class="grid lanes">`;
+  for(const [key,title,color] of LANES){
+    const list = cars.filter(c=>c.status===key);
+    html+=`<div class="lane"><h3><span><span class="dot" style="background:${color}"></span>${title}</span><span class="cnt">${list.length}</span></h3><div class="body">`;
+    if(!list.length)html+=`<div class="empty">— empty —</div>`;
+    for(const c of list){
+      const warn = (key==='loaded'&&!c.dest)?'warn':'';
+      const overdue = (key==='shop'&&(Date.now()-c.since)/H>SHOP_OVERDUE_H)?'overdue':'';
+      const unconf = (key==='shop'&&!c.shopConfirmed);
+      html+=`<div class="card ${warn} ${overdue}">
+        <div class="num">${c.num}</div>
+        <div class="meta">${c.product} &middot; <span class="pill ${c.type}">${c.type==='eo'?'ETH OXIDE':'PRODUCT'}</span><br>
+        ${c.seal&&c.seal!=='—'?'Seal '+c.seal:''}${c.dest?' &middot; → '+c.dest:''}
+        ${unconf?'<br><span style="color:var(--red)">⚠ unconfirmed — not yet at shop</span>':''}
+        ${c.shopReason?'<br>'+c.shopReason:''}</div>
+        <div class="age"><span>in stage ${fmtAge(c.since)}</span></div>
+      </div>`;
+    }
+    html+=`</div></div>`;
+  }
+  html+=`</div>`;
+  view.innerHTML=html;
+}
+
+function renderLoad(){
+  view.innerHTML=`<div class="grid formgrid"><div class="panel">
+    <h2>Log Finished-Product Load</h2>
+    <div class="sub">Seal is entered first (it's already on the car). Times can be stamped with one tap.</div>
+    <label>Seal Number(s)</label><input class="mono" id="l_seal" placeholder="55230xxx">
+    <label>Car Number</label><input class="mono" id="l_num" placeholder="BCPX 100xxx">
+    <label>Product</label>
+    <select id="l_prod"><option>Choline Cl 70%</option><option>Choline Cl 75%</option><option>Choline Cl 60%</option></select>
+    <div class="row2"><div><label>Load Limit (lb)</label><input class="mono" id="l_limit" placeholder="263,000"></div>
+    <div><label>Lightweight / Tare (lb)</label><input class="mono" id="l_tare" placeholder="72,000"></div></div>
+    <div class="row2"><div><label>Amount Loaded (lb)</label><input class="mono" id="l_amt" placeholder="191,000"></div>
+    <div><label>Destination</label><input id="l_dest" placeholder="City, ST"></div></div>
+    <div class="row2"><div><label>Time Started</label><input id="l_start" placeholder="--:--">
+    <button class="timebtn" onclick="$('#l_start').value=nowTime()">⏱ stamp now</button></div>
+    <div><label>Time Finished</label><input id="l_fin" placeholder="--:--">
+    <button class="timebtn" onclick="$('#l_fin').value=nowTime()">⏱ stamp now</button></div></div>
+    <button class="primary" onclick="saveLoad()">Save Load → Yard</button>
+  </div>
+  <div class="panel"><h2>Why this matters</h2>
+  <div class="sub">Captured once here, this data flows straight to the dashboard and the CN switch output — no re-typing into CN's website, and no third hand-copy.</div>
+  <div class="note">The same numbers used to be written in the green book, again on a paper checklist, then keyed a third time into CN. Entering once removes the two transcription steps where destination errors happen.</div></div></div>`;
+}
+function saveLoad(){
+  const num=$('#l_num').value.trim();
+  if(!num){toast('Car number required');return;}
+  cars.push({id:nextId++,num,product:$('#l_prod').value,type:'prod',status:'loaded',
+    seal:$('#l_seal').value.trim()||'—',weight:$('#l_amt').value.trim(),dest:$('#l_dest').value.trim(),since:Date.now()});
+  toast('Load saved — car added to yard');
+  go('dash');
+}
+
+function renderOffload(){
+  view.innerHTML=`<div class="grid formgrid"><div class="panel">
+    <h2>Log Ethylene Oxide Offload</h2>
+    <div class="sub">Weight comes from CN's paperwork (car was loaded elsewhere). Confirm signatures were exchanged.</div>
+    <label>Car Number</label><input class="mono" id="o_num" placeholder="GATX / TILX / PROX ...">
+    <label>Seal Number(s)</label><input class="mono" id="o_seal" placeholder="40118xxx">
+    <div class="row2"><div><label>Weight — from CN sheet (lb)</label><input class="mono" id="o_wt" placeholder="180,000"></div>
+    <div><label>Amount Offloaded (lb)</label><input class="mono" id="o_amt" placeholder="180,000"></div></div>
+    <label>Time Finished</label><input id="o_fin" placeholder="--:--">
+    <button class="timebtn" onclick="$('#o_fin').value=nowTime()">⏱ stamp now</button>
+    <label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;font-size:13px;color:var(--ink);margin-top:16px">
+    <input type="checkbox" id="o_sig" style="width:auto" checked> Signatures exchanged with CN (their sheet + ours)</label>
+    <button class="primary" onclick="saveOffload()">Save Offload → Yard</button>
+  </div>
+  <div class="panel"><h2>EO cars &amp; TSA</h2>
+  <div class="sub">Every EO car you log here appears instantly on the TSA / EO report.</div>
+  <div class="note">If TSA enters the plant, the EO report tab gives car numbers of all ethylene-oxide cars on site in one click — well inside the ~30-minute window — with no paper to dig through.</div></div></div>`;
+}
+function saveOffload(){
+  const num=$('#o_num').value.trim();
+  if(!num){toast('Car number required');return;}
+  cars.push({id:nextId++,num,product:'EO',type:'eo',status:'offloading',
+    seal:$('#o_seal').value.trim()||'—',weight:$('#o_wt').value.trim(),dest:'',since:Date.now()});
+  toast('Offload logged — EO car on site');
+  go('dash');
+}
+
+function renderCN(){
+  const ready = cars.filter(c=>c.status==='loaded');
+  let rows = ready.map(c=>{
+    const ok=!!c.dest;
+    return `<div class="cnrow ${ok?'':'bad'}">
+      <div class="f"><small>Car</small>${c.num}</div>
+      <div class="f"><small>Seal</small>${c.seal}</div>
+      <div class="f"><small>Weight</small>${c.weight||'—'}</div>
+      <div class="f"><small>Destination</small>${c.dest||'—'}</div>
+      <span class="badge ${ok?'ok':'miss'}">${ok?'READY':'NO DEST'}</span>
+    </div>`;
+  }).join('');
+  const blocked = ready.filter(c=>!c.dest).length;
+  view.innerHTML=`<div class="panel"><h2>CN Switch Request Output</h2>
+    <div class="sub">Loaded cars awaiting pickup. Night shift copies this instead of re-typing into CN. Cars missing a destination are blocked.</div>
+    ${rows||'<div class="empty">No loaded cars awaiting CN pickup.</div>'}
+    <div style="display:flex;gap:10px;margin-top:16px">
+      <button class="primary" style="margin:0;flex:1" onclick="copyCN()">⧉ Copy for CN (${ready.length-blocked} ready)</button>
+      <button class="ghost" onclick="go('dash')">Back to yard</button>
+    </div>
+    ${blocked?`<div class="note" style="color:var(--red)">⚠ ${blocked} car(s) blocked — add a destination on the dashboard before submitting to CN.</div>`:''}
+  </div>`;
+}
+function copyCN(){
+  const ready=cars.filter(c=>c.status==='loaded'&&c.dest);
+  if(!ready.length){toast('Nothing ready — fix missing destinations');return;}
+  const txt=ready.map(c=>`${c.num}\t${c.seal}\t${c.weight}\t${c.dest}`).join('\n');
+  navigator.clipboard?.writeText('CAR\tSEAL\tWEIGHT\tDESTINATION\n'+txt).then(()=>toast(ready.length+' car(s) copied for CN'),()=>toast('Copied'));
+}
+
+function renderTSA(){
+  const eo = cars.filter(c=>c.type==='eo'&&c.status!=='shop');
+  view.innerHTML=`<div class="tsa-panel">
+    <div class="tsa-head"><span class="badge2">TSA REPORT</span><h2 style="margin:0">Ethylene Oxide Cars Currently On Site</h2></div>
+    <div class="sub">Car numbers only — no seals or weights, as TSA requires. Generated live from the yard.</div>
+    <div class="stat"><div>EO CARS ON SITE<b style="color:var(--purple)">${eo.length}</b></div>
+    <div>GENERATED<b style="font-size:16px">${nowTime()}</b></div></div>
+    <div class="tsa-list">${eo.map(c=>`<div class="tsa-car">${c.num}</div>`).join('')||'<div class="empty">No EO cars on site.</div>'}</div>
+    <div style="display:flex;gap:10px;margin-top:20px">
+      <button class="primary" style="margin:0;flex:1" onclick="copyTSA()">⧉ Copy car list</button>
+      <button class="ghost" onclick="window.print()">⎙ Print</button>
+    </div>
+    <div class="note">Cars sent to the shop are excluded — they are not on site. This list satisfies the requirement to show EO cars in the plant within ~30 minutes of a TSA visit.</div>
+  </div>`;
+}
+function copyTSA(){
+  const eo=cars.filter(c=>c.type==='eo'&&c.status!=='shop').map(c=>c.num).join('\n');
+  navigator.clipboard?.writeText('EO CARS ON SITE — '+new Date().toLocaleString()+'\n\n'+eo).then(()=>toast('EO car list copied'),()=>toast('Copied'));
+}
+
+function renderShop(){
+  const shop=cars.filter(c=>c.status==='shop');
+  const others=cars.filter(c=>c.status!=='shop');
+  view.innerHTML=`<div class="grid formgrid">
+    <div class="panel"><h2>Cars Requested to Shop</h2>
+    <div class="sub">BCP only requests the move — CN handles it, and the car sometimes never makes it. Unconfirmed and overdue cars are flagged so nothing goes silently missing.</div>
+    ${shop.map(c=>{
+      const od=(Date.now()-c.since)/H>SHOP_OVERDUE_H;
+      return `<div class="cnrow ${od||!c.shopConfirmed?'bad':''}">
+        <div class="f"><small>Car</small>${c.num}</div>
+        <div class="f"><small>Reason</small>${c.shopReason||'—'}</div>
+        <div class="f"><small>Requested</small>${fmtAge(c.since)} ago</div>
+        <span class="badge ${c.shopConfirmed?'ok':'miss'}">${c.shopConfirmed?(od?'OVERDUE':'CONFIRMED'):'UNCONFIRMED'}</span>
+        ${!c.shopConfirmed?`<button class="ghost" onclick="confirmShop(${c.id})">Confirm gone</button>`:`<button class="ghost" onclick="returnShop(${c.id})">Returned</button>`}
+      </div>`;
+    }).join('')||'<div class="empty">No cars currently requested to shop.</div>'}
+    </div>
+    <div class="panel"><h2>Request a Car to Shop</h2>
+    <div class="sub">Logs the request and starts tracking. Status goes Requested → Confirmed Gone → Returned.</div>
+    <label>Car</label><select id="s_car">${others.map(c=>`<option value="${c.id}">${c.num} — ${c.product}</option>`).join('')}</select>
+    <label>Reason</label><input id="s_reason" placeholder="Valve leak, hydrotest due, bad order...">
+    <button class="primary" onclick="requestShop()">Request to Shop</button>
+    <div class="note">Overdue threshold is ${SHOP_OVERDUE_H}h — past that, a confirmed car is flagged amber so a stalled repair or a railroad slip-up becomes visible.</div>
+    </div>
+  </div>`;
+}
+function requestShop(){
+  const id=+$('#s_car').value, c=cars.find(x=>x.id===id);
+  if(!c){toast('Pick a car');return;}
+  c.status='shop';c.shopConfirmed=false;c.shopReason=$('#s_reason').value.trim()||'Maintenance';c.since=Date.now();c.dest='';
+  toast(c.num+' requested to shop');render();
+}
+function confirmShop(id){const c=cars.find(x=>x.id===id);c.shopConfirmed=true;toast(c.num+' confirmed at shop');render();}
+function returnShop(id){const c=cars.find(x=>x.id===id);c.status=c.type==='eo'?'eo_wait':'empty';c.since=Date.now();c.shopReason='';toast(c.num+' returned from shop');render();}
+
+/* ---------- nav ---------- */
+function go(v){current=v;document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('active',t.dataset.view===v));render();}
+document.querySelectorAll('.tab').forEach(t=>t.addEventListener('click',()=>go(t.dataset.view)));
+render();
+</script>
+</body>
+</html>
